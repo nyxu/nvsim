@@ -40,7 +40,7 @@ def electron_Hahn(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1,reportfil
         for time in evo_list:
             pulse_slices = [half_pi,simple_pulse(time,[]),pi_pulse,simple_pulse(time,[]),half_pi]
             paras.append(['Hahn @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])
-        ret_list = parfor(simulate_lab_frame_exp_thread,paras,ncpus)
+        ret_list = parfor(simulate_lab_frame_exp_thread,paras,num_cpus=ncpus)
     else:
         for time in evo_list:
             pulse_slices = [half_pi,simple_pulse(time,[]),pi_pulse,simple_pulse(time,[]),half_pi]
@@ -64,7 +64,7 @@ if __name__=='__main__':
     B1=1e-3
     T1=1e6
     T2=2e5
-    ncpus=1
+    ncpus=2
     evo_list,result_list=electron_Hahn(nvsys,evo_time,points,B0,mwfreq,B1,T1,T2,ncpus)
 
     # Plot the result

@@ -9,8 +9,9 @@ from scipy import fftpack
 from qcexp import *  
 
 
-def electron_fid(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1):
-    
+def electron_fid(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1,reportfile = 'fid_process.txt'):
+    if os.path.exists(reportfile):
+        os.remove(reportfile)    
     H0 = nvsys.get_static_ham(B0)
     control_matrix = nvsys.cal_global_control_matrix()
     c_op_list = []
@@ -35,12 +36,12 @@ def electron_fid(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1):
         paras = []
         for time in evo_list:
             pulse_slices = [half_pi,simple_pulse(time,[]),half_pi]
-            paras.append(['FID @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op])
-        ret_list = parfor(simulate_lab_frame_exp_thread,paras,ncpus)
+            paras.append(['FID @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])
+        ret_list = parfor(simulate_lab_frame_exp_thread,paras,num_cpus=ncpus)
     else:
         for time in evo_list:
             pulse_slices = [half_pi,simple_pulse(time,[]),half_pi]
-            state = simulate_lab_frame_exp_thread(['FID @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op])    
+            state = simulate_lab_frame_exp_thread(['FID @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])    
             ret_list.append(state)
     result_list = []    
     for state in ret_list:
@@ -58,7 +59,7 @@ if __name__=='__main__':
     B1=1e-3
     T1=20000
     T2=2000
-    ncpus=4
+    ncpus=2
     evo_list,result_list=electron_fid(nvsys,evo_time,points,B0,mwfreq,B1,T1,T2,ncpus)
 
     # Plot the result

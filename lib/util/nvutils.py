@@ -65,7 +65,8 @@ def get_transition_freq(ham,state0,state1):
 
 def cal_state_fidelity(s1,s2):
     return abs((s1.dag()*s2).tr())  
-  
+
+from numpy import sqrt
 def cal_eigenstate(ham,state,state_discrim_threshold=sqrt(0.5)):
     evals,estates=ham.eigenstates()
     bas = state 
@@ -73,7 +74,7 @@ def cal_eigenstate(ham,state,state_discrim_threshold=sqrt(0.5)):
         if cal_state_fidelity(bas, estates[s]) > state_discrim_threshold:               
             return estates[s]
          
-    print 'cannot find estates for ',m
+#     print 'cannot find estates for ',m
     return None
 
 # def cal_fidelity(U1,U2,Ps= None):

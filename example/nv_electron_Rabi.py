@@ -8,7 +8,9 @@ from rotating_frame import *
 from scipy import fftpack    
 from qcexp import *
 
-def electron_rabi(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1):
+def electron_rabi(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1,reportfile='rabi_process.txt'):
+    if os.path.exists(reportfile):
+        os.remove(reportfile)
     
     H0 = nvsys.get_static_ham(B0)
     control_matrix = nvsys.cal_global_control_matrix()
@@ -31,12 +33,12 @@ def electron_rabi(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1):
         paras = []
         for time in evo_list:
             pulse_slices = [simple_pulse(time,['MW'])]
-            paras.append(['Rabi @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op])
-        ret_list = parfor(simulate_lab_frame_exp_thread,paras,ncpus)
+            paras.append(['Rabi @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])
+        ret_list = parfor(simulate_lab_frame_exp_thread,paras,num_cpus=ncpus)
     else:
         for time in evo_list:
             pulse_slices = [simple_pulse(time,['MW'])]
-            state = simulate_lab_frame_exp_thread(['Rabi @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op])    
+            state = simulate_lab_frame_exp_thread(['Rabi @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])    
             ret_list.append(state)
     result_list = []    
     for state in ret_list:
@@ -53,7 +55,7 @@ if __name__=='__main__':
     B1=1e-3
     T1=20000
     T2=2000
-    ncpus=4
+    ncpus=2
     evo_list,result_list=electron_rabi(nvsys,evo_time,points,B0,mwfreq,B1,T1,T2,ncpus)
 
     # Plot the result
