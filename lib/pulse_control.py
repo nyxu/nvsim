@@ -9,12 +9,12 @@ from nv_system import *
 
         
 class MWChannel:
-    def __init__(self,freq,init_phase,field,phi=0,thi=0):
+    def __init__(self,freq,init_phase,field,theta=0,phi=0):
         self.frequency = freq
         self.phase = init_phase
         self.field = field
         self.phi = phi
-        self.theta = thi
+        self.theta = theta
 
 #         Ix,Iy,Iz = eff_momentums
 #         self.control_ham = -(Ix*cos(self.theta)*cos(self.phi) + \

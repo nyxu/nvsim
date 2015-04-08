@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 if __name__=='__main__':
 #     nvsys = nv_system([nv_electron_spin(),N14_nuclear_spin()],[[0,1,default_NV_N14_coupling]]) 
-    filename = 'hahn_echo_process.txt'
+    filename = 'magnetometer_ac_process.txt'
     f = open(filename)
     content = f.read()
     f.close()
@@ -24,7 +24,7 @@ if __name__=='__main__':
         if len(words) and len(words[0]):
 #             evo_list.append(float(words[0].strip()))
 #             result_list.append(float(words[1].strip()))
-            res[float(words[0].strip())]=float(words[1].strip())
+            res[float(words[0].strip())]=double(words[1].strip())
             
     evo_list = res.keys()
     evo_list.sort()

@@ -35,15 +35,35 @@ def simulate_lab_frame_exp_strfunc(H0,control_matrix,Bz,init_state_rou,channels,
     
     for pslice in pulse_slices:
         Ht = [H0*pi*2]
-        strfuncx = ''
-        empty_slice = True
+        
+        #x direction fields
+        strfuncx,strfuncy,strfuncz = ['','','']
+        empty_slice_x = empty_slice_y=empty_slice_z=True
         for ch in channels:
-            if (abs(pslice.get_amplitude(ch)) > 0):
-                strfuncx += (str(2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*cos(channels[ch].phi)) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
-                empty_slice = False
+            fieldx = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*cos(channels[ch].phi)
+            fieldy = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*sin(channels[ch].phi)
+            fieldz = 2*channels[ch].field*pslice.get_amplitude(ch)*sin(channels[ch].theta)
+            if (abs(fieldx) > 0):
+                strfuncx += (str(fieldx) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                empty_slice_x = False
+            if (abs(fieldy) > 0):
+                strfuncy += (str(fieldy) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                empty_slice_y = False
+            if (abs(fieldz) > 0):
+                strfuncz += (str(fieldz) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                empty_slice_z = False
         strfuncx += '0'
-        if not empty_slice:
+        strfuncy += '0'
+        strfuncz += '0'
+        if not empty_slice_x:
             Ht.append([-matx*pi*2,strfuncx])
+        if not empty_slice_y:
+            Ht.append([-maty*pi*2,strfuncy])
+        if not empty_slice_z:
+            Ht.append([-matz*pi*2,strfuncz])
+
+
+
         tlist = linspace(0.0, pslice.get_duration(), 2)
         
         output = mesolve(Ht, current_state, tlist, c_op_list, [], {},opts)      
