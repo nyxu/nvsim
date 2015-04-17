@@ -44,12 +44,12 @@ def electron_Hahn(nvsys,evo_time,points,B0,mwfreq,B1,T1=0,T2=0,ncpus=1,reportfil
     else:
         for time in evo_list:
             pulse_slices = [half_pi,simple_pulse(time,[]),pi_pulse,simple_pulse(time,[]),half_pi]
-            state = simulate_lab_frame_exp_thread(['Hahn @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])    
-            ret_list.append(state)
-    result_list = []    
-    for state in ret_list:
-        result_list.append(abs((state*ob_op).tr()))
-    return evo_list,result_list
+            expres = simulate_lab_frame_exp_thread(['Hahn @ '+str(time)+'ns',H0,control_matrix,B0,rou0,mwchannels,pulse_slices,c_op_list,time,ob_op,reportfile])    
+            ret_list.append(expres)
+#     result_list = []    
+#     for state in ret_list:
+#         result_list.append(abs((state*ob_op).tr()))
+    return evo_list,ret_list
  
 if __name__=='__main__':
 #     nvsys = nv_system([nv_electron_spin(),N14_nuclear_spin()],[[0,1,default_NV_N14_coupling]]) 

@@ -24,7 +24,7 @@ if __name__=='__main__':
         if len(words) and len(words[0]):
 #             evo_list.append(float(words[0].strip()))
 #             result_list.append(float(words[1].strip()))
-            res[float(words[0].strip())]=double(words[1].strip())
+            res[float(words[0].strip())]=float(words[1].strip())
             
     evo_list = res.keys()
     evo_list.sort()

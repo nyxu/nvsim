@@ -3,70 +3,94 @@ from nv_system import *
 from numpy import *
 from rotating_frame import *
 import StringIO
-
+from pulse_control import *
 from threading import *
 from threadreporter import *            
         
+        
+ZeroValue=1e-15
             
 def simulate_lab_frame_exp_thread(paras):
-    thread_name,H0,control_matrix,Bz,init_state_rou,mwchannels,pslices,c_op_list,param,observ_op,reportfile = paras
+    
+    if len(paras)==11:
+        thread_name,H0,control_matrix,Bz,init_state_rou,mwchannels,pslices,c_op_list,report_str,observ_op,reportfile = paras
+    else:
+        thread_name,H0,control_matrix,Bz,init_state_rou,mwchannels,pslices,c_op_list,report_str,observ_op = paras
+        reportfile = None
+        
 
     print 'Thread ',thread_name, ' start' 
     import time
     starttime = time.clock()
 
-    retval= simulate_lab_frame_exp_strfunc(H0,control_matrix,Bz,init_state_rou,mwchannels,pslices,c_op_list)
+    fstate= simulate_lab_frame_exp_strfunc(H0,control_matrix,Bz,init_state_rou,mwchannels,pslices,c_op_list)
+    expresult=real((fstate*observ_op).tr())
     print 'Thread ',thread_name, "cost time :", str(time.clock()-starttime)
-    report(reportfile,[param,real((retval*observ_op).tr())])
-    return retval
+    if reportfile:
+        report(reportfile,[report_str,expresult])
+    return expresult
 
 def simulate_lab_frame_exp_strfunc(H0,control_matrix,Bz,init_state_rou,channels,pulse_slices,c_op_list):
-    #the time-independent hamiltonian
     matx,maty,matz = control_matrix
     
-    #options for mesolve
-    opts=Odeoptions()
-    opts.nsteps=1e9
-    
 
-#     current_phase = 0.0
     current_time = 0.0
     current_state = init_state_rou
     
     for pslice in pulse_slices:
         Ht = [H0*pi*2]
-        
-        #x direction fields
-        strfuncx,strfuncy,strfuncz = ['','','']
+        strfuncx,strfuncy,strfuncz = ['']*3
         empty_slice_x = empty_slice_y=empty_slice_z=True
         for ch in channels:
-            fieldx = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*cos(channels[ch].phi)
-            fieldy = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*sin(channels[ch].phi)
-            fieldz = 2*channels[ch].field*pslice.get_amplitude(ch)*sin(channels[ch].theta)
-            if (abs(fieldx) > 0):
-                strfuncx += (str(fieldx) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
-                empty_slice_x = False
-            if (abs(fieldy) > 0):
-                strfuncy += (str(fieldy) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
-                empty_slice_y = False
-            if (abs(fieldz) > 0):
-                strfuncz += (str(fieldz) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
-                empty_slice_z = False
+
+            if isinstance(channels[ch],MWChannel):
+                fieldx = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*cos(channels[ch].phi)
+                fieldy = 2*channels[ch].field*pslice.get_amplitude(ch)*cos(channels[ch].theta)*sin(channels[ch].phi)
+                fieldz = 2*channels[ch].field*pslice.get_amplitude(ch)*sin(channels[ch].theta)
+                if (abs(fieldx) > ZeroValue):
+                    strfuncx += (str(fieldx) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                    empty_slice_x = False
+                if (abs(fieldy) > ZeroValue):
+                    strfuncy += (str(fieldy) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                    empty_slice_y = False
+                if (abs(fieldz) > ZeroValue):
+                    strfuncz += (str(fieldz) + '*cos('+str(2*pi*channels[ch].frequency)+'*(t+'+str(current_time) + ')+'+str(pslice.get_phase(ch)+channels[ch].phase)+')+')
+                    empty_slice_z = False
+                    
+            elif isinstance(channels[ch],ArbWave) :
+                fieldx = channels[ch].ratio*pslice.get_amplitude(ch)*cos(channels[ch].theta)*cos(channels[ch].phi)
+                fieldy = channels[ch].ratio*pslice.get_amplitude(ch)*cos(channels[ch].theta)*sin(channels[ch].phi)
+                fieldz = channels[ch].ratio*pslice.get_amplitude(ch)*sin(channels[ch].theta)
+                if (abs(fieldx) > ZeroValue):
+                    strfuncx += (channels[ch].genFuncStr(current_time)+'+')
+                    empty_slice_x = False
+                if (abs(fieldy) > ZeroValue):
+                    strfuncy += (channels[ch].genFuncStr(current_time)+'+')
+                    empty_slice_y = False
+                if (abs(fieldz) > ZeroValue):
+                    strfuncz += (channels[ch].genFuncStr(current_time)+'+')
+                    empty_slice_z = False
+
+    
         strfuncx += '0'
         strfuncy += '0'
         strfuncz += '0'
+        
         if not empty_slice_x:
             Ht.append([-matx*pi*2,strfuncx])
+#             print 'xfunc:', strfuncx
         if not empty_slice_y:
             Ht.append([-maty*pi*2,strfuncy])
+#             print 'yfunc:',strfuncy
         if not empty_slice_z:
             Ht.append([-matz*pi*2,strfuncz])
+#             print 'zfunc:',strfuncz
 
 
 
         tlist = linspace(0.0, pslice.get_duration(), 2)
         
-        output = mesolve(Ht, current_state, tlist, c_op_list, [], {},opts)      
+        output = mesolve(Ht, current_state, tlist, c_op_list, [], {},Odeoptions(nsteps=1e9))      
         current_state = output.states[-1]
         current_time = current_time + pslice.get_duration()
         
